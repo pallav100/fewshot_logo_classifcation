@@ -1,3 +1,4 @@
+
 # coding=utf-8
 import torch
 from torch.nn import functional as F
@@ -27,10 +28,8 @@ def euclidean_dist(x, y):
     d = x.size(1)
     if d != y.size(1):
         raise Exception
-
     x = x.unsqueeze(1).expand(n, m, d)
     y = y.unsqueeze(0).expand(n, m, d)
-
     return torch.pow(x - y, 2).sum(2)
 
 
@@ -73,7 +72,7 @@ def prototypical_loss(input, target, n_support,i_ep,t_ep, mode='val', nit = 1000
     prototypes = torch.stack([input_cpu[idx_list].mean(0) for idx_list in support_idxs])
     # FIXME when torch will support where as np
     query_idxs = torch.stack(list(map(lambda c: target_cpu.eq(c).nonzero()[n_support:], classes))).view(-1)
-    if(i_ep==t_ep and nit==niit and mode=='train' ):
+    if( nit==niit and mode=='train' ):
         torch.save(prototypes, traintensor)
         torch.save(prototypes, prev_latest_tensor)
  #       print('saved training tensor')
@@ -82,15 +81,21 @@ def prototypical_loss(input, target, n_support,i_ep,t_ep, mode='val', nit = 1000
        a = torch.load(prev_latest_tensor)
        b = torch.cat([a,prototypes],dim=0)
        if(nit==niit and i_ep==t_ep):
-           print('saving to lat')
-           torch.save(b,latest_tensor)
            if(final):
              print('saving final few shot model')
              torch.save(b,prev_latest_tensor)
+
+
+             with open('/home/pallav_soni/oplogo/done_test_classes.txt','a') as outfile:
+                 with open('/home/pallav_soni/oplogo/my_test_classes.txt') as infile:
+                      for line in infile:
+                          outfile.write(line)
     query_samples = input.to('cpu')[query_idxs]
     if(mode=='test'):
-        dists = euclidean_dist(query_samples, b)
 
+        dists = euclidean_dist(query_samples, b)
+        dists2 = euclidean_dist(query_samples,prototypes)
+        log_p_y2 = F.log_softmax(-dists2, dim=1).view(n_classes, n_query, -1)
     else:
         dists =euclidean_dist(query_samples, prototypes)
     log_p_y = F.log_softmax(-dists, dim=1).view(n_classes, n_query, -1)
@@ -100,9 +105,18 @@ def prototypical_loss(input, target, n_support,i_ep,t_ep, mode='val', nit = 1000
            target_inds = torch.arange(0, n_classes)
            target_inds = target_inds.view(n_classes, 1, 1)
            target_inds = target_inds.expand(n_classes, n_query, 1).long()
+           target_inds2 = target_inds
            t = torch.tensor((),dtype = torch.long)
            t = t.new_full((n_classes,n_query,1), a.size()[0])
            target_inds = torch.add(target_inds,t)
+           if(i_ep==t_ep and nit==niit):
+#             target_inds = torch.add(target_inds,t)
+          # loss_val2 = -log_p_y2.gather(2, target_inds2).squeeze().view(-1).mean()
+             print(target_inds)
+             print(target_inds2)
+             __, y_hat2 = log_p_y2.max(2)
+             acc_val_infew = y_hat2.eq(target_inds2.squeeze()).float().mean()
+             print("Fewshot Intra-class accuracy: {}".format(acc_val_infew))
     else:
         target_inds = torch.arange(0, n_classes)
         target_inds = target_inds.view(n_classes, 1, 1)
@@ -110,13 +124,15 @@ def prototypical_loss(input, target, n_support,i_ep,t_ep, mode='val', nit = 1000
 #    if(t_ep == i_ep and mode =='test'):
     loss_val = -log_p_y.gather(2, target_inds).squeeze().view(-1).mean()
     _, y_hat = log_p_y.max(2)
-    acc_val = y_hat.eq(target_inds.squeeze()).float().mean()
 
+    acc_val = y_hat.eq(target_inds.squeeze()).float().mean()
+#    if(nit==niit):
     return loss_val,  acc_val
 def my_prototypical_loss(query,path):
 	avgs = torch.load(path)
-	dists = euclidean_dist(query,avgs)
-	log_p_y = F.log_softmax(-dists, dim=1).view(1, 1, -1)
-	print(log_p_y)
-	lbl = log_p_y.max(2)
+	d = euclidean_dist(query,avgs)
+	m = d.view(1, -1).argmin(1)
+	log_y = F.log_softmax(-d, dim=1).view(1, 1, -1)
+#	print(log_p_y)
+	lbl = log_y.max(2)
 	return(lbl)

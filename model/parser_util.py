@@ -27,17 +27,17 @@ def get_parser():
     parser.add_argument('-lr', '--learning_rate',
                         type=float,
                         help='learning rate for the model, default=0.001',
-                        default=0.001)
+                        default=0.03)
 
     parser.add_argument('-lrS', '--lr_scheduler_step',
                         type=int,
                         help='StepLR learning rate scheduler step, default=20',
-                        default=20)
+                        default=15)
 
     parser.add_argument('-lrG', '--lr_scheduler_gamma',
                         type=float,
                         help='StepLR learning rate scheduler gamma, default=0.5',
-                        default=0.5)
+                        default=0.1)
 
     parser.add_argument('-epe', '--iterations',
                         type=int,
@@ -72,7 +72,7 @@ def get_parser():
     parser.add_argument('-k_val_qry', '--num_query_val',
                         type=int,
                         help='number of samples per class to use as query for validation, default=15',
-                        default=15)
+                        default=10)
 
     parser.add_argument('-ntest', '--classes_per_it_test',
                         type=int,

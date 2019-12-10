@@ -1,4 +1,5 @@
 # coding=utf-8
+
 from prototypical_batch_sampler import PrototypicalBatchSampler
 from prototypical_loss import prototypical_loss as loss_fn
 from omniglot_dataset import OmniglotDataset
@@ -163,7 +164,7 @@ def test(opt, test_dataloader, model):
     '''
     device = 'cuda:0' if torch.cuda.is_available() and opt.cuda else 'cpu'
     avg_acc = list()
-    for epoch in range(10):
+    for epoch in range(25):
         test_iter = iter(test_dataloader)
         i=1
         t = len(test_iter)
@@ -218,9 +219,10 @@ def main():
     test_dataloader = init_dataloader(options, 'test')
 
     model = init_protonet(options)
-    optim = init_optim(options, model)
-    lr_scheduler = init_lr_scheduler(options, optim)
-
+    #optim = init_optim(options, model)
+   # lr_scheduler = init_lr_scheduler(options, optim)
+    model_path = '/home/pallav_soni/pro/output/best_model.pth'
+    model.load_state_dict(torch.load(model_path))
    # model.load_state_dict(best_state)
     print('Testing with best model..')
     test(opt=options,

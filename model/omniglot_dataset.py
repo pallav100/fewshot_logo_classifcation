@@ -104,7 +104,7 @@ def get_current_classes(fname):
 
 def load_img(path, idx):
     x = Image.open(path).convert('RGB')
-    x = x.resize((28, 28))
+#    x = x.resize((28, 28))
 
     shape = 3, x.size[0], x.size[1]
     x = np.array(x, np.float32, copy=False)
